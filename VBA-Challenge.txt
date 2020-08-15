@@ -1,0 +1,114 @@
+Sub TickerCounter()
+
+    Dim last_row As Long
+    Dim ws As Worksheet
+    Dim Cnt As Integer
+    Dim priceChange As Double
+    Dim volume As Long
+    Dim percent As Double
+    Dim percentPriceChange As String
+    Dim firstOpen As Double
+    Dim lastClose As Double
+    Dim maxPriceChange As Double
+    Dim minPriceChange As Double
+    Dim maxTotalVolume As Double
+    
+    'First for loop to go through sheet by sheet and the entire workbook
+    For Each ws In ThisWorkbook.Worksheets
+       
+        'Populate Headers we need
+        ws.Cells(1, 9).Value = "Ticker"
+        ws.Cells(1, 10).Value = "Price Change"
+        ws.Cells(1, 11).Value = "Percent Price Change"
+        ws.Cells(1, 12).Value = "Total Volume"
+        
+        'Initiating/setting variables within each sheet
+        Cnt = 2
+        firstOpen = ws.Cells(2, 3).Value
+        maxPriceChange = 0
+        minPriceChange = 0
+        maxTotalVolume = 0
+        last_row = ws.Cells(Rows.Count, 1).End(xlUp).Row
+        
+        'for loop to go through an entire sheet
+        For i = 2 To last_row
+                 
+          'Determine when the ticker value changes
+          If ws.Cells(i, 1).Value <> ws.Cells(i + 1, 1).Value Then
+            
+            ' Capture the lastClose price
+             lastClose = ws.Cells(i, 6).Value
+             'Capture the ticker and populate in a designated column
+             ws.Cells(Cnt, 9).Value = ws.Cells(i, 1).Value
+             
+             '***** BEGIN PRICE CHANGE CALCULATIONS ****
+             ' Calculate priceChange for each ticker and populate in a designated column
+             
+             priceChange = firstOpen - lastClose
+             ws.Cells(Cnt, 10).Value = priceChange
+             
+             'Making sure the percent is valid, not allow division if Cells(i,3).Value = 0
+             If Cells(i, 3).Value <> 0 Then
+                percent = priceChange / Cells(i, 3).Value
+             End If
+             
+             percentPriceChange = FormatPercent(percent, 0)
+             ws.Cells(Cnt, 11).Value = FormatPercent(percent, 0)
+             
+             'Find out which Ticker has the greatest price increase
+             If priceChange > maxPriceChange Then
+                maxPriceChange = priceChange
+                ws.Cells(2, 14).Value = "Greatest Price Increase"
+                ws.Cells(2, 15).Value = maxPriceChange
+                ws.Cells(2, 16).Value = "For Ticker " + ws.Cells(Cnt, 9).Value
+             End If
+             
+              'Find out which Ticker has the lowest price decrease
+             If priceChange < minPriceChange Then
+                minPriceChange = priceChange
+                ws.Cells(3, 14).Value = "Lowest Price Decrease"
+                ws.Cells(3, 15).Value = minPriceChange
+                ws.Cells(3, 16).Value = "For Ticker " + ws.Cells(Cnt, 9).Value
+             End If
+             
+             ' Color each cell based on priceChange
+             If priceChange >= 0 Then
+                ws.Cells(Cnt, 10).Interior.ColorIndex = 4
+             Else
+                ws.Cells(Cnt, 10).Interior.ColorIndex = 3
+             End If
+             '****END PRICE CHANGE CALCULATIONS ****
+             
+             'reset the first open price and the last close price for each Ticker
+             firstOpen = ws.Cells(i + 1, 3).Value
+             lastClose = 0
+             
+             ' **** BEGIN VOLUME CALCULATIONS ****
+            ' Add Volume and populate it in a designated column
+              volume = ws.Cells(i, 7).Value + volume
+              ws.Cells(Cnt, 12).Value = volume
+              
+             'Find out greatest total volumne
+             If volume > maxTotalVolume Then
+                maxTotalVolume = volume
+                ws.Cells(4, 14).Value = "Greatest Total Volume"
+                ws.Cells(4, 15).Value = maxTotalVolume
+                ws.Cells(4, 16).Value = "For Ticker " + ws.Cells(Cnt, 9).Value
+             End If
+             '**** END VOLUME CALCULATIONS ****
+              
+             'resetting/preparing for the next time when there is a change in Ticker value
+             priceChange = 0
+             Cnt = Cnt + 1
+             
+          End If
+          
+          'reset volume after each ticker change
+          volume = 0
+                   
+        Next i
+       
+    Next ws
+    
+End Sub
+
